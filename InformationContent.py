@@ -78,37 +78,21 @@ for fname in glob.glob(path):
     if filesize == 0:
         pass
     else: 
-        TF_data, name = get_TF_data(fname)
+        # get the PVM Matrix + the name of the TF 
+        pvm_matrix , name = get_TF_data(fname)
+
+        # print the PVM of Zelda (2 experiments)
         if name == 'vfl':
             print(name)
-            print(TF_data)
+            print(pvm_matrix)
 
+        # calculate the information content of each TF 
         info_tf = 1 
+
+        # append the TF and the Infocontent to a data frame 
         df = pd.DataFrame([[name, info_tf]], columns = ['TF_Name', "Info"])
         TF_info = TF_info.append(df, ignore_index=True)
         TF_info = TF_info.sort_values(by='TF_Name')
         TF_info.to_csv('/Users/janadelmann/polybox/LabRotation1/information_conten_TF', index=False)
 
-    '''
-    with open(fname, newline='') as TF_file:
-        
-        lines = TF_file.readlines()
-        
-        p = re.compile('Gene')
-        q = re.compile('Family')
-        l = re.compile('TF Name')
-        m = re.compile('Species')
-        n = re.compile('Motif')
-        o = re.compile('')
-
-    
-
-    for line in lines:
-
-        if(p.search(line) or q.search(line) or l.search(line) or m.search(line) or n.search(line) or line.strip() == ''):
-            continue   
-        else:
-            print(line)
-
-    '''
 
