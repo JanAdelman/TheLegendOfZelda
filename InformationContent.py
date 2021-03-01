@@ -59,8 +59,10 @@ def get_TF_data(TF_data):
     column_names = [i for i in range(0, max(col_count))]
     df = pd.read_csv(fname, header=None, delimiter="\t", names=column_names)
     name = str(df[1][1])
-    print(name)
     df = df.drop([0,1,2,3,4,5,6])
+
+    df = df.to_numpy()
+    df = np.delete(df, 0, 1)
 
     return df, name
 
@@ -77,13 +79,15 @@ for fname in glob.glob(path):
         pass
     else: 
         TF_data, name = get_TF_data(fname)
+        if name == 'vfl':
+            print(name)
+            print(TF_data)
 
-        print(TF_data)
-        
         info_tf = 1 
         df = pd.DataFrame([[name, info_tf]], columns = ['TF_Name', "Info"])
         TF_info = TF_info.append(df, ignore_index=True)
-        print(TF_info)
+        TF_info = TF_info.sort_values(by='TF_Name')
+        TF_info.to_csv('/Users/janadelmann/polybox/LabRotation1/information_conten_TF', index=False)
 
     '''
     with open(fname, newline='') as TF_file:
