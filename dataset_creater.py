@@ -1,3 +1,15 @@
+# import necessary packages
+import numpy as np
+import os
+import csv
+import re 
+import glob
+from pathlib import Path
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
 # create new directory for the TF files to be put in 
 Path("/Users/janadelmann/polybox/LabRotation1/TF_PWM").mkdir(parents=True, exist_ok=True)
 
