@@ -1,0 +1,14 @@
+Genome: D. Melanogaster (Aug 2014 BDGP Rel6 + ISO1 MT/dm6)
+Genome: H. Sapiens (Dec 2013 GRCh38/hg38)
+
+Minimal Log Score -10000
+Log Scaling factor 100 
+
+Scanning Options 
+
+Cut-off: P-value of 0.00001
+Bg base composition 0.29, 0,21, 0.21, 0.29
+Search Strand: both
+Reference Position: both
+Non-overlapping matches (checked)
+
