@@ -39,6 +39,43 @@ path = "/Users/janadelmann/polybox/LabRotation1/TF_PWM/*.csv"
 # get data for each TF
 TF_info = pd.DataFrame(columns=['TF_Name', "Info"])
 
+def update_pvm(pvm_matrix, L, n_nucleotides):
+    '''
+    Ineficient Function to add pseudo probabilities to nucleotides which occur with probability 0 
+    in a row. 
+    '''
+
+    for l in range(0, L):
+        count = np.count_nonzero(pvm_matrix[l][:] != 0)
+
+        if count == 4:
+            continue
+
+        if count == 3:
+            for nucleotide in range(0, n_nucleotides): 
+                if pvm_matrix[l][nucleotide] == 0:
+                    pvm_matrix[l][nucleotide] += 10**(-6)
+                else:
+                    pvm_matrix[l][nucleotide] -= (10**(-6))/3
+
+        if count == 2:
+            for nucleotide in range(0, n_nucleotides): 
+                if pvm_matrix[l][nucleotide] == 0:
+                    pvm_matrix[l][nucleotide] += 10**(-6)
+                else:
+                    pvm_matrix[l][nucleotide] -= (10**(-6))
+
+        if count == 1:
+            for nucleotide in range(0, n_nucleotides): 
+                if pvm_matrix[l][nucleotide] == 0:
+                    pvm_matrix[l][nucleotide] += 10**(-6)
+                else:
+                    pvm_matrix[l][nucleotide] -= (3*10**(-6))
+                if count == 0:
+                    print('alarm')
+
+    return pvm_matrix
+
 # https://www.ncbi.nlm.nih.gov/genome?term=vih&cmd=DetailsSearch
 # median GC-content of ID-47, 42%
 
@@ -49,6 +86,8 @@ nucleo_unif = 0.25
 #==============================================================================#
 # Calculate the Information content for each TF
 #==============================================================================#
+
+num = 0 
 
 for fname in glob.glob(path):
 
@@ -68,7 +107,13 @@ for fname in glob.glob(path):
 
         L = pvm_matrix.shape[0]
         n_nucleotides = pvm_matrix.shape[1]
-  
+
+        # wacky version on how to add pseudo probabilites if the occurence of a certain nucleotide is 0
+        # Remark, log not defined for 0. 
+        
+        if num in pvm_matrix:
+            pvm_matrix = update_pvm(pvm_matrix, L, n_nucleotides)
+
         # calculate the information content of each TF 
         info_tf = 0
         for l in range(0, L):
@@ -101,12 +146,17 @@ min_data = TF_info.groupby(by="TF_Name").min()
 # get the experiment with max information 
 max_data = TF_info.groupby(by="TF_Name").max()
 
+# Calculate average over the averaged dataset 
+mean_of_mean_dataset = mean_data['Info'].mean()
+print(mean_of_mean_dataset)
 
-# Calculate average over all TF
+# Calulate average over full dataset with repeated experiments for some TFs
 mean = TF_info['Info'].mean()
 print(mean)
 
 # get information value for Zelda transcription factor 
+# mean would be the best 
+
 mean_vfl = mean_data['Info']['vfl']
 max_vfl = max_data['Info']['vfl']
 min_vfl = min_data['Info']['vfl']
@@ -115,6 +165,16 @@ min_vfl = min_data['Info']['vfl']
 mean_grh = mean_data['Info']['grh']
 max_grh = max_data['Info']['grh']
 min_grh = min_data['Info']['grh']
+
+# what fraction of TF are below zelda? 
+def sum(df):
+    return (df.Info < df['Info']['vfl']).sum()
+
+smaller_zelda = sum(mean_data)
+
+# print the size of the DF and print the number of TFs with smaller info content than zelda 
+print(mean_data.shape[0])
+print(smaller_zelda)
 
 #==============================================================================#
 # Histogram Plot for different dataset compositions
@@ -140,6 +200,7 @@ plt.show()
 
 # Plot of only average information 
 sns.histplot(mean_data['Info'], alpha = 0.5)
+plt.axvline(mean_of_mean_dataset, color='red')
 plt.axvline(mean_vfl, color='darkblue')
 plt.axvline(max_grh, color='green', alpha = 1)
 plt.annotate('Zelda Information content', xy=(float(mean_vfl), 15), xytext=(float(mean_vfl)+2, 40), arrowprops=dict(arrowstyle="->",facecolor='black'))
