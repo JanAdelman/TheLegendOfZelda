@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy import stats
 
 # get working directory
 cwd = os.getcwd()
@@ -40,6 +41,7 @@ path = "/Users/janadelmann/polybox/LabRotation1/TF_PWM/*.csv"
 TF_info = pd.DataFrame(columns=['TF_Name', "Info"])
 
 def update_pvm(pvm_matrix, L, n_nucleotides):
+    
     '''
     Ineficient Function to add pseudo probabilities to nucleotides which occur with probability 0 
     in a row. 
@@ -110,11 +112,12 @@ for fname in glob.glob(path):
 
         # wacky version on how to add pseudo probabilites if the occurence of a certain nucleotide is 0
         # Remark, log not defined for 0. 
-        
+    
         if num in pvm_matrix:
             pvm_matrix = update_pvm(pvm_matrix, L, n_nucleotides)
-
+      
         # calculate the information content of each TF 
+
         info_tf = 0
         for l in range(0, L):
             sub_sum = 0
@@ -125,9 +128,7 @@ for fname in glob.glob(path):
                     sub_sum += pvm_matrix[l][nucleotide]*np.log2(pvm_matrix[l][nucleotide]/nucleo_distr[nucleotide])
 
             info_tf += sub_sum
-
-        # append the TF and the Infocontent to a data frame 
-        
+    
         df = pd.DataFrame([[name, info_tf]], columns = ['TF_Name', "Info"])
         TF_info = TF_info.append(df, ignore_index=True)
         TF_info = TF_info.sort_values(by='TF_Name')
@@ -139,6 +140,14 @@ for fname in glob.glob(path):
 
 # get the mean over all epxeriments 
 mean_data = TF_info.groupby(by="TF_Name").mean()
+# get std of mean over experiments 
+std_data = mean_data.std()
+
+
+# test for normality of the data (data is not normally distributed)
+shapiro_test_full = stats.shapiro(TF_info['Info'])
+shapiro_test_mean = stats.shapiro(mean_data)
+
 
 # get the experiment with min informataion
 min_data = TF_info.groupby(by="TF_Name").min()
@@ -203,8 +212,9 @@ sns.histplot(mean_data['Info'], alpha = 0.5)
 plt.axvline(mean_of_mean_dataset, color='red')
 plt.axvline(mean_vfl, color='darkblue')
 plt.axvline(max_grh, color='green', alpha = 1)
-plt.annotate('Zelda Information content', xy=(float(mean_vfl), 15), xytext=(float(mean_vfl)+2, 40), arrowprops=dict(arrowstyle="->",facecolor='black'))
-plt.annotate('Grainy Head Information content', xy=(float(mean_grh), 15), xytext=(float(mean_grh)+4.3, 55), arrowprops=dict(arrowstyle="->",facecolor='black'))
+plt.annotate('Zelda Information Content', xy=(float(mean_vfl), 20), xytext=(float(mean_vfl)+2, 40), arrowprops=dict(arrowstyle="->",facecolor='black'))
+plt.annotate('Grainy Head Information Content', xy=(float(mean_grh), 25), xytext=(float(mean_grh)+4.3, 55), arrowprops=dict(arrowstyle="->",facecolor='black'))
+plt.annotate('Mean', xy=(float(mean_of_mean_dataset), 15), xytext=(float(mean_grh)+8, 20), arrowprops=dict(arrowstyle="->",facecolor='black'))
 plt.ylabel("Count",fontsize=14)
 plt.xlabel('Information content (bits)', fontsize = 14)
 plt.title('Mean information content of D. Melanogaster TFs', fontsize = 17)
