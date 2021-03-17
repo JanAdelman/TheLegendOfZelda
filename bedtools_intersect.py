@@ -42,4 +42,4 @@ complement_enhancer_coordiantes = pybedtools.BedTool(path +'/complement_enhancer
 complement_sequence_of_enhancer_regions = complement_enhancer_coordiantes.sequence(fi=drosophila_genome)
 
 with open(path + '/complement_enhancer_regions_dm3.fa', 'w') as complement_enhancer_regions_dm3:
-    complement_enhancer_regions_dm3.write(open(sequence_of_enhancer_regions.seqfn).read())
+    complement_enhancer_regions_dm3.write(open(complement_sequence_of_enhancer_regions.seqfn).read())
