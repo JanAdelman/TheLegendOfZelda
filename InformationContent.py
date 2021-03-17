@@ -39,6 +39,7 @@ def get_TF_data(TF_data):
 path = "/Users/janadelmann/polybox/LabRotation1/TF_PWM/*.csv"
 # get data for each TF
 TF_info = pd.DataFrame(columns=['TF_Name', "Info"])
+TF_info_normalised = pd.DataFrame(columns=['TF_Name', 'Info_normalised'])
 
 def update_pvm(pvm_matrix, L, n_nucleotides):
     
@@ -80,9 +81,8 @@ def update_pvm(pvm_matrix, L, n_nucleotides):
 
 # https://www.ncbi.nlm.nih.gov/genome?term=vih&cmd=DetailsSearch
 # median GC-content of ID-47, 42%
-
-# The layout of the dataframe is: A C G T 
 nucleo_distr = [0.29, 0.21, 0.21, 0.29]
+
 nucleo_unif = 0.25
 
 #==============================================================================#
@@ -128,11 +128,19 @@ for fname in glob.glob(path):
                     sub_sum += pvm_matrix[l][nucleotide]*np.log2(pvm_matrix[l][nucleotide]/nucleo_distr[nucleotide])
 
             info_tf += sub_sum
-    
+
+        
         df = pd.DataFrame([[name, info_tf]], columns = ['TF_Name', "Info"])
         TF_info = TF_info.append(df, ignore_index=True)
         TF_info = TF_info.sort_values(by='TF_Name')
         TF_info.to_csv('/Users/janadelmann/polybox/LabRotation1/information_content_TF', index=False)
+
+        # create dataframe normailsed by length of each motfi 
+        info_tf_normalised = info_tf/L
+        df_normalised = pd.DataFrame([[name, info_tf_normalised]], columns = ['TF_Name', 'Info_normalised'])
+        TF_info_normalised = TF_info_normalised.append(df_normalised, ignore_index=True)
+        TF_info_normalised = TF_info_normalised.sort_values(by='TF_Name')
+        TF_info_normalised.to_csv('/Users/janadelmann/polybox/LabRotation1/information_content_TF_normalised', index=False)
 
 #==============================================================================#
 # Calculate basic statistics from the data TF
@@ -140,14 +148,29 @@ for fname in glob.glob(path):
 
 # get the mean over all epxeriments 
 mean_data = TF_info.groupby(by="TF_Name").mean()
+mean_data_normalised = TF_info_normalised.groupby(by='TF_Name').mean()
 # get std of mean over experiments 
 std_data = mean_data.std()
 
+# finding TFs with big and small info conten 
+subset_normalised = mean_data_normalised.sort_values(by='Info_normalised')
+subset = mean_data.sort_values(by='Info')
+print('=====================')
+print('Min/Max info content for normalised TFs')
+print(subset_normalised[0:5])
+print(subset_normalised[-5:])
+print('normalised vfl: ')
+print(mean_data_normalised['Info_normalised']['vfl'])
+print('====================')
+print('Min/Max info content for TFs')
+print(subset[0:5])
+print(subset[-5:])
+print('vfl: ')
+print(mean_data['Info']['vfl'])
 
 # test for normality of the data (data is not normally distributed)
 shapiro_test_full = stats.shapiro(TF_info['Info'])
 shapiro_test_mean = stats.shapiro(mean_data)
-
 
 # get the experiment with min informataion
 min_data = TF_info.groupby(by="TF_Name").min()
@@ -158,6 +181,8 @@ max_data = TF_info.groupby(by="TF_Name").max()
 # Calculate average over the averaged dataset 
 mean_of_mean_dataset = mean_data['Info'].mean()
 print(mean_of_mean_dataset)
+mean_of_normalised_datatset = mean_data_normalised['Info_normalised'].mean()
+print(mean_of_normalised_datatset)
 
 # Calulate average over full dataset with repeated experiments for some TFs
 mean = TF_info['Info'].mean()
@@ -169,43 +194,39 @@ print(mean)
 mean_vfl = mean_data['Info']['vfl']
 max_vfl = max_data['Info']['vfl']
 min_vfl = min_data['Info']['vfl']
+normalised_vfl = mean_data_normalised['Info_normalised']['vfl']
 
 # get information value for GrainyHead transcription factor 
 mean_grh = mean_data['Info']['grh']
 max_grh = max_data['Info']['grh']
 min_grh = min_data['Info']['grh']
+normalised_grh = mean_data_normalised['Info_normalised']['grh']
 
 # what fraction of TF are below zelda? 
 def sum(df):
     return (df.Info < df['Info']['vfl']).sum()
 
+def sum_normalised(df):
+    return (df.Info_normalised < df['Info_normalised']['vfl']).sum()
+
 smaller_zelda = sum(mean_data)
+smaller_zelda_normalised = sum_normalised(mean_data_normalised)
 
 # print the size of the DF and print the number of TFs with smaller info content than zelda 
+print('=======================================')
+print('TFs smaller infoconnntent than Zelda: ')
 print(mean_data.shape[0])
 print(smaller_zelda)
+
+print('========================================')
+print('Normalised TFs smaller infoconnntent than Zelda: ')
+print(mean_data_normalised.shape[0])
+print(smaller_zelda_normalised)
 
 #==============================================================================#
 # Histogram Plot for different dataset compositions
 #==============================================================================#
 
-'''
-# big plot with all criterions included 
-colour = ['r', 'b', 'g']
-#sns.histplot([mean_data['Info'], max_data['Info'], min_data['Info']], color=['r','b', 'g'], alpha=0.5)
-data = [mean_data['Info'], max_data['Info'], min_data['Info'], ]
-for d in data:
-    sns.histplot(d)
-plt.axvline(mean_vfl, color='darkblue')
-plt.axvline(mean, color = 'red')
-#sns.histplot(mean_data['Info'])
-#sns.histplot(min_data['Info'])
-#sns.histplot(max_data['Info'])
-plt.xlabel('Information content (bits)', fontsize = 14)
-plt.title('Information content of D. Melanogaster TFs')
-plt.show()
-'''
-#fig, axs = plt.subplots(ncols=3)
 
 # Plot of only average information 
 sns.histplot(mean_data['Info'], alpha = 0.5)
@@ -221,24 +242,16 @@ plt.title('Mean information content of D. Melanogaster TFs', fontsize = 17)
 plt.savefig('/Users/janadelmann/polybox/LabRotation1/figures/mean_info_content.png')
 plt.show()
 
-# Plot of min information 
-sns.histplot(min_data['Info'], alpha = 0.5)
-plt.axvline(min_vfl, color='darkblue')
-plt.axvline(min_grh, color='green')
-plt.annotate('Zelda Information content', xy=(float(min_vfl), 15), xytext=(float(min_vfl)+2, 40), arrowprops=dict(arrowstyle="->",facecolor='black'))
-plt.annotate('Grainy Head Information content', xy=(float(min_grh), 15), xytext=(float(min_grh)+4.3, 55), arrowprops=dict(arrowstyle="->",facecolor='black'))
-plt.xlabel('Information content (bits)', fontsize=14)
-plt.title('Min. information content of D. Melanogaster TFs', fontsize=17)
-plt.savefig('/Users/janadelmann/polybox/LabRotation1/figures/min_info_content.png')
-plt.show()
-
-# Plot of max information 
-sns.histplot(max_data['Info'], alpha = 0.5)
-plt.axvline(max_vfl, color='darkblue')
-plt.axvline(max_grh, color='blue')
-plt.annotate('Zelda Information content', xy=(float(max_vfl), 15), xytext=(float(max_vfl)+4, 40), arrowprops=dict(arrowstyle="->",facecolor='black'))
-plt.annotate('Grainy Head Information content', xy=(float(min_grh), 15), xytext=(float(min_grh)+6, 55), arrowprops=dict(arrowstyle="->",facecolor='black'))
-plt.xlabel('Information content (bits)', fontsize=14)
-plt.title('Max. information content of D. Melanogaster TFs')
-plt.savefig('/Users/janadelmann/polybox/LabRotation1/figures/max_info_content.png')
+# plot of the normalised information content 
+sns.histplot(mean_data_normalised['Info_normalised'], alpha = 0.5)
+plt.axvline(mean_of_normalised_datatset, color='red')
+plt.axvline(normalised_vfl, color='darkblue')
+plt.axvline(normalised_grh, color='green', alpha = 1)
+plt.annotate('Zelda Information Content', xy=(float(normalised_vfl), 20), xytext=(float(normalised_vfl)+0.1, 45), arrowprops=dict(arrowstyle="->",facecolor='black'))
+plt.annotate('Grainy Head', xy=(float(normalised_grh), 25), xytext=(float(normalised_grh)-0.5, 55), arrowprops=dict(arrowstyle="->",facecolor='black'))
+plt.annotate('Mean', xy=(float(mean_of_normalised_datatset), 15), xytext=(float(normalised_grh)-0.5, 20), arrowprops=dict(arrowstyle="->",facecolor='black'))
+plt.ylabel("Count",fontsize=14)
+plt.xlabel('Information content (bits)', fontsize = 14)
+plt.title('Mean information content of normalised D. Melanogaster TFs', fontsize = 17)
+plt.savefig('/Users/janadelmann/polybox/LabRotation1/figures/mean_info_content_normalised.png')
 plt.show()
