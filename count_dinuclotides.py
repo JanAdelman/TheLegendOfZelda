@@ -3,6 +3,7 @@ import argparse
 import collections
 from Bio import SeqIO
 import pandas as pd
+import sys
 
 def parseArgs():
         """Parse commandline arguments"""
@@ -22,7 +23,9 @@ def parseArgs():
 
         return parser.parse_args()
 
-args = parseArgs()        
+args = parseArgs() 
+
+filename = sys.argv[4]
 
 dinucleotides = ['AA','AT','AC','AG','TT','TA','TC','TG','CC','CA','CT','CG','GG','GA','GT','GC']
 ratios = [('AA','TT'),('AC','GT'),('AG','CT'),('TT','AA'),('TC','GA'),('TG','CA'),('CC','GG'),('CA','TG'),('CT','AG'),('GG','CC'),('GA','TC'),('GT','AC')]
@@ -44,6 +47,6 @@ with open(args.infile, 'r') as ifh, open(args.countsfile, 'w') as cfh:
         df = df.assign(identity = id) 
         df = df.set_index('identity')
 
-df.to_csv('counts.txt')
+df.to_csv(filename)
 
         
