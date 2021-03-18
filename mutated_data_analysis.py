@@ -45,6 +45,8 @@ std_mono = np.std(ls)
 print(std_mono)
 print(mean_mono)
 
+# dinucleotide
+
 dinucleotide = pd.read_csv(path + '/BiasAwayResults/PWM_Scan/Dinucleotide/dinucleotide_count.csv', sep=',')
 mean_di = mean(dinucleotide)
 
@@ -55,3 +57,15 @@ for i in dinucleotide:
 std_di = np.std(ls)
 print(std_di)
 print(mean_di)
+
+# random dna 
+rand_dna = pd.read_csv(path + '/BiasAwayResults/random_dna_zelda_count.txt', sep=',')
+mean_rand = mean(rand_dna)
+
+ls = []
+for i in rand_dna:
+    ls.append(int(i))
+
+std_rand = np.std(ls)
+print(std_rand)
+print(mean_rand)
